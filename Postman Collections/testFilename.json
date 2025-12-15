@@ -1,0 +1,3077 @@
+{
+	"info": {
+		"_postman_id": "d1c4165e-0078-4c17-8644-2d722426331f",
+		"name": "Create Integration Workflow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create session",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.variables.set(\"id\", json.sessionId);",
+							"pm.variables.set(\"initialOAuthUrl\", \"https://integrate.postman-beta.com/oauth/authorize/githubapp?sessionId=\" + json.sessionId)",
+							"",
+							"pm.test(\"Session created successfully\", function () {",
+							"    pm.expect(json.sessionId).to.be.a('string').and.not.empty;",
+							"    pm.expect(json.oauthUrl).to.be.a('string').and.not.empty;",
+							"});",
+							"",
+							"console.log(\"✅ Session created with ID: \" + json.sessionId);",
+							"console.log(\"🔗 OAuth URL: \" + pm.variables.get('initialOAuthUrl'));",
+							"console.log(\"⚠️ IMPORTANT: To complete the OAuth flow, you must:\");",
+							"console.log(\"   1. Open the OAuth URL in a browser: \" + pm.variables.get('initialOAuthUrl'));",
+							"console.log(\"   2. Authorize the application\");",
+							"console.log(\"   3. Wait for the redirect to complete\");",
+							"console.log(\"   4. Then run the 'Get session information' request to retrieve the token\");",
+							"console.log(\"\");",
+							"console.log(\"⚠️ This collection run will continue, but subsequent requests will fail until OAuth is completed.\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "c0d6acc5-4e81-485d-8dcb-d342a89283f2"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"packages": {},
+						"type": "text/javascript",
+						"id": "e348b56b-6934-4aa9-84d5-cdecae653434"
+					}
+				}
+			],
+			"id": "1c261da1-4b9f-4d0b-9688-b856731bbd4a",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-access-token",
+						"value": "{{access_token}}",
+						"type": "text"
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "200 - success",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/oauth/session?service={{service}}&tokenType={{tokenType}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"oauth",
+						"session"
+					],
+					"query": [
+						{
+							"key": "service",
+							"value": "{{service}}",
+							"description": "values - github, bitbucket, dropbox, slack"
+						},
+						{
+							"key": "tokenType",
+							"value": "{{tokenType}}",
+							"description": "values - bulk_import, api_repository"
+						},
+						{
+							"key": "customDomain",
+							"value": "{{custom_domain}}",
+							"description": "The base url for on-prem integrations",
+							"disabled": true
+						}
+					]
+				},
+				"description": "The user uses the CLI to cause this endpoint to get called, which gives us a URL to redirect them to."
+			},
+			"response": [
+				{
+					"id": "01243a24-8f2a-429a-8967-60932de0260f",
+					"name": "200 - success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "x-mock-response-name",
+								"value": "200 - success",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/oauth/session?service=github&tokenType=api_repository",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth",
+								"session"
+							],
+							"query": [
+								{
+									"key": "service",
+									"value": "github"
+								},
+								{
+									"key": "tokenType",
+									"value": "api_repository"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"sessionId\": \"c79b9de6-5a2b-41d2-9886-b443a2be3895\",\n    \"clientId\": \"github\",\n    \"state\": \"oubhiqwe7824iubqge91oinfwbn\",\n    \"scope\": \"repo\",\n    \"oauthUrl\": \"The oauth url the the client needs to redirect the user to authorize\",\n    \"redirectUrl\": \"The URL the provider needs to send information to\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Get session information",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Pre-request script for polling with delay",
+							"// Note: Delays between polling attempts should be configured in the Collection Runner settings",
+							"// using the \"Delay\" option. setTimeout() does not work in collection runs.",
+							"setTimeout( () => {",
+							"    const pollAttempt = pm.variables.get(\"pollAttempt\");",
+							"    const maxPollAttempts = pm.variables.get(\"maxPollAttempts\");",
+							"    const pollDelayMs = pm.variables.get(\"pollDelayMs\");",
+							"",
+							"    if (pollAttempt > 0) {",
+							"        console.log(`⏳ Polling attempt ${pollAttempt}/${maxPollAttempts} - configure delay in Collection Runner settings`);",
+							"    }",
+							"}, 5000);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "ac8e7dc9-86e8-43c9-abf1-5fa1f738c3aa"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Check if session exists",
+							"if (pm.response.code === 404) {",
+							"    pm.test(\"Session not found - OAuth flow needs to be initiated\", function () {",
+							"        pm.expect(pm.response.code).to.equal(404);",
+							"        console.log(\"⚠️ Session not found. Please create a session first using the 'Create session' request.\");",
+							"        console.log(\"The OAuth flow needs to be initiated before fetching session information.\");",
+							"    });",
+							"    ",
+							"    // Stop the collection run since we can't proceed without a valid session",
+							"    pm.execution.setNextRequest(null);",
+							"    return;",
+							"}",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"const pollAttempt = parseInt(pm.variables.get(\"pollAttempt\") || 0);",
+							"const maxPollAttempts = parseInt(pm.variables.get(\"maxPollAttempts\") || 10);",
+							"",
+							"// Check if the session has a token",
+							"if (json.token && json.token.id) {",
+							"    // SUCCESS - Token is available!",
+							"    pm.variables.set(\"token_id\", json.token.id);",
+							"    pm.variables.set(\"github_access_token\", json.token.accessToken);",
+							"    ",
+							"    console.log(\"╔════════════════════════════════════════════════════════════════╗\");",
+							"    console.log(\"║          ✅ OAUTH AUTHORIZATION SUCCESSFUL!                    ║\");",
+							"    console.log(\"╚════════════════════════════════════════════════════════════════╝\");",
+							"    console.log(\"\");",
+							"    console.log(\"🎉 Token ID retrieved:\", json.token.id);",
+							"    console.log(\"✓ Authorization completed after\", pollAttempt, \"polling attempts\");",
+							"    console.log(\"✓ Proceeding with remaining requests...\");",
+							"    console.log(\"\");",
+							"    console.log(\"════════════════════════════════════════════════════════════════\");",
+							"    ",
+							"    pm.test(\"Token ID is present\", function () {",
+							"        pm.expect(json.token.id).to.be.a('string').and.not.empty;",
+							"    });",
+							"    ",
+							"    // Continue to next request",
+							"} else {",
+							"    // Token not yet available - check if we should continue polling",
+							"    pm.variables.set(\"token_id\", null);",
+							"    ",
+							"    const newPollAttempt = pollAttempt + 1;",
+							"    pm.variables.set(\"pollAttempt\", newPollAttempt);",
+							"    ",
+							"    if (newPollAttempt < maxPollAttempts) {",
+							"        // Continue polling",
+							"        console.log(`🔄 Polling attempt ${newPollAttempt}/${maxPollAttempts}: Token not yet available`);",
+							"        console.log(`   Waiting for user to complete OAuth authorization...`);",
+							"        ",
+							"        pm.test(`Polling for token (attempt ${newPollAttempt}/${maxPollAttempts})`, function () {",
+							"            pm.expect(json.token).to.be.null;",
+							"        });",
+							"        ",
+							"        // Loop back to this same request to poll again",
+							"        pm.execution.setNextRequest(pm.info.requestId);",
+							"        ",
+							"    } else {",
+							"        // Max attempts reached - timeout",
+							"        console.log(\"╔════════════════════════════════════════════════════════════════╗\");",
+							"        console.log(\"║          ⏱️  OAUTH POLLING TIMEOUT                             ║\");",
+							"        console.log(\"╚════════════════════════════════════════════════════════════════╝\");",
+							"        console.log(\"\");",
+							"        console.log(\"❌ Maximum polling attempts reached (\", maxPollAttempts, \"attempts)\");",
+							"        console.log(\"⚠️  OAuth authorization was not completed within the timeout period\");",
+							"        console.log(\"\");",
+							"        ",
+							"        pm.test(\"OAuth flow timeout - authorization not completed\", function () {",
+							"            pm.expect.fail(\"OAuth authorization was not completed within the timeout period. Please authorize manually and re-run the collection.\");",
+							"        });",
+							"        ",
+							"        // Stop the collection run",
+							"        pm.execution.setNextRequest(null);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "3066482c-d07f-42a7-9a0e-b4115331190d"
+					}
+				}
+			],
+			"id": "2bbd89a4-41fb-47d9-82dc-47fad0356315",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-access-token",
+						"value": "{{access_token}}",
+						"type": "text"
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "200 success api_repository tokenType",
+						"type": "text"
+					}
+				],
+				"url": "{{baseUrl}}/oauth/session/{{id}}",
+				"description": "Once the user returns back to the CLI we grab the session data with the token id that will allow us to do our Git calls\n\n---\n\nThe id in the path param denotes the session id received in the create session call. This endpoint is used to fetch the session information (and token) from the server. The response varies based on the tokenType that we sent in the previous call\n\nIf **token_type = bulk_import** -> the response contains the actual access token\n\nIf **token_type = api_repository** -> the response contains the id of the token stored in the OAuth token table, which can be used later in API Git flows."
+			},
+			"response": [
+				{
+					"id": "87618caf-044f-431b-95c3-a2f31840632e",
+					"name": "200 success api_repository tokenType",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/oauth/session/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth",
+								"session",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "c79b9de6-5a2b-41d2-9886-b443a2be3895"
+								}
+							]
+						}
+					},
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"createdAt\": \"2021-05-24T06:09:38.000Z\",\n  \"createdBy\": \"477932\",\n  \"expiresIn\": 300000,\n  \"updatedAt\": \"2021-05-24T06:09:45.000Z\",\n  \"id\": \"c79b9de6-5a2b-41d2-9886-b443a2be3895\",\n  \"tokenId\": 123\n}"
+				}
+			]
+		},
+		{
+			"name": "Get user details",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"pm.variables.set(\"owner\", json.username);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "a40dcdb9-87ba-4d08-86d8-246c4230b265"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if token_id exists before making the request",
+							"const tokenId = pm.variables.get(\"token_id\");",
+							"",
+							"if (!tokenId || tokenId === \"null\" || tokenId === \"\") {",
+							"    // Skip this request",
+							"    throw new Error(\"token_id is not set. OAuth flow must be completed first.\");",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "28c89cc2-1f69-4463-90a1-23d5fdbfc96c"
+					}
+				}
+			],
+			"id": "5beb6c03-46d3-4afe-9261-851d2ab0bae6",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "200 OK - get user",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/git/user?tokenId={{token_id}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"git",
+						"user"
+					],
+					"query": [
+						{
+							"key": "tokenId",
+							"value": "{{token_id}}",
+							"description": "the id of OAuth token"
+						},
+						{
+							"key": "customDomain",
+							"value": "{{custom_domain}}",
+							"description": "the custom domain to be used for on-prem integration",
+							"disabled": true
+						}
+					]
+				},
+				"description": "We will eventually give the user a choice between their username, or an org as the owner of the repo that we will be putting the SDK in."
+			},
+			"response": [
+				{
+					"id": "4fd82bb6-23fb-4817-8956-8f2edd72d4b6",
+					"name": "200 OK - get user",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/user?tokenId=123",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"user"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "123"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"id\": \"1233\",\n  \"name\": \"Shrey Shah\",\n  \"username\": \"shreys7\",\n  \"avatar\": \"https://logo.shreys7.com\"\n}"
+				},
+				{
+					"id": "171cbf9c-d58a-47f4-ad13-ebd7705382b3",
+					"name": "400 token missing",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/git/user"
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"paramMissingError\",\n    \"message\": \"Required param missing in the request\",\n    \"details\": {\n      \"param\": \"tokenId\"\n    }\n  }\n}"
+				},
+				{
+					"id": "7a6bc2c0-912e-469e-a99a-13860aa194d3",
+					"name": "400 invalid token",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/user?tokenId=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"user"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"invalidGitTokenError\",\n    \"message\": \"Please check if the access token is valid and has the appropriate permissions\"\n  }\n}"
+				},
+				{
+					"id": "0bf20296-48ab-49e2-b74e-07b7ce262149",
+					"name": "403 forbidden (tokenId not owned by the user)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/user?tokenId=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"user"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"forbiddenError\",\n    \"message\": \"You are not permitted to perform the action.\",\n    \"details\": {\n      \"model\": \"oauthtoken\",\n      \"model_id\": 1,\n      \"message\": \"You are not allowed to access this OAuth token\"\n    }\n  }\n}"
+				},
+				{
+					"id": "06c89af4-d1ca-40ca-9039-9f1b925743aa",
+					"name": "404 token not found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/user?tokenId=9999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"user"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "9999"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"tokenNotFoundError\",\n    \"message\": \"We could not find the OAuth token you are looking for\"\n  }\n}"
+				},
+				{
+					"id": "3d0db39d-783a-4a36-a7f8-808ed7000d4f",
+					"name": "404 Not found (3rd party)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/user?tokenId=13",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"user"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "13"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n      \"name\": \"userNotFoundError\",\n      \"message\": \"We could not find the user you are looking for\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get user orgs",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if token_id exists before making the request",
+							"const tokenId = pm.variables.get(\"token_id\");",
+							"",
+							"if (!tokenId || tokenId === \"null\" || tokenId === \"\") {",
+							"    // Skip this request",
+							"    throw new Error(\"token_id is not set. OAuth flow must be completed first.\");",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "b972d4e7-f02a-4492-8ec8-28985d41f0ee"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// This allows you use an org as the owner to fetch repositories instead of the user",
+							"// const json = pm.response.json();",
+							"// pm.variables.set(\"owner\", json.orgs[0].name);",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"//const json = pm.response.json();",
+							"//pm.variables.set(\"owner\", json.orgs[0].name);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "a103384a-f97d-4b97-a216-aa692497b6fc"
+					}
+				}
+			],
+			"id": "d1ff6b76-f10c-4197-8bc8-3061c51239cb",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "200 OK - get orgs",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/git/orgs?tokenId={{token_id}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"git",
+						"orgs"
+					],
+					"query": [
+						{
+							"key": "tokenId",
+							"value": "{{token_id}}",
+							"description": "the id of OAuth token"
+						},
+						{
+							"key": "customDomain",
+							"value": "{{custom_domain}}",
+							"description": "the custom domain to be used for on-prem integration",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Once we have done this we give the user their list of posibble orgs (or their username) as the owner of the repo"
+			},
+			"response": [
+				{
+					"id": "960e27b9-e710-4a22-ba75-2ed66ee3d6e8",
+					"name": "200 OK - get orgs",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/orgs?tokenId=123",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"orgs"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "123"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"orgs\": [\n    {\n      \"id\": \"TestOrganisation1\",\n      \"name\": \"Testing purpose\",\n      \"description\": \"Hello I am an org\",\n      \"avatar\": \"https://logo.shreys7.com\"\n    },\n    {\n      \"id\": \"TestOrganisation2\",\n      \"name\": \"Testing purpose 2\",\n      \"description\": null,\n      \"avatar\": \"https://logo.shreys7.com\"\n    },\n    {\n      \"id\": \"postmanlabs\",\n      \"name\": \"Postman\",\n      \"description\": \"Postman org\",\n      \"avatar\": \"https://logo.postmanlabs.com\"\n    }\n  ]\n}"
+				},
+				{
+					"id": "9c026579-9e6a-4cad-a9b8-7fd6fb3e7100",
+					"name": "400 token missing",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/git/orgs"
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n      \"name\": \"paramMissingError\",\n      \"message\": \"Parameter is missing in the request.\",\n      \"details\": {\n          \"param\": \"tokenId\"\n      }\n  }\n}"
+				},
+				{
+					"id": "154aad84-8f70-4bd9-bc66-76c3e43040ce",
+					"name": "400 invalid token",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/orgs?tokenId=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"orgs"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"invalidGitTokenError\",\n    \"message\": \"Please check if the access token is valid and has the appropriate permissions\"\n  }\n}"
+				},
+				{
+					"id": "87546659-2277-411b-b5b8-203d21514a9c",
+					"name": "403 forbidden (tokenId not owned by the user)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/orgs?tokenId=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"orgs"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n      \"name\": \"forbiddenError\",\n      \"message\": \"You are not permitted to perform the action.\",\n      \"details\": {\n        \"model\": \"oauthtoken\",\n        \"model_id\": 4908,\n        \"message\": \"You are not allowed to access this OAuth token\"\n      }\n  }\n}"
+				},
+				{
+					"id": "97b8ad09-26ad-473d-9c95-0080cc09898d",
+					"name": "404 token not found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/orgs?tokenId=9999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"orgs"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "9999"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n      \"name\": \"tokenNotFoundError\",\n      \"message\": \"We could not find the OAuth token you are looking for.\"\n  }\n}"
+				},
+				{
+					"id": "6e165960-a134-41e0-86d7-e217602566db",
+					"name": "404 Not found (3rd party)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/orgs?tokenId=13",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"orgs"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "13"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"userNotFoundError\",\n    \"message\": \"We could not find the user you are looking for\"\n  }\n}"
+				}
+			]
+		},
+		{
+			"name": "List repositories",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"pm.test(\"Check if the response contains the expected data\", function () {",
+							"    pm.expect(json.repositories).to.have.lengthOf.at.least(1);",
+							"});",
+							"",
+							"const targetRepoName = \"github-postman-sdk-gen-test-repo\";",
+							"const foundRepo = json.repositories.find(repo => repo.name === targetRepoName);",
+							"",
+							"pm.test(\"Repository 'sdk-gen-github-integration-testing' should exist in the response\", function() {",
+							"    pm.expect(foundRepo, \"Repository '\" + targetRepoName + \"' was not found in the repositories array\").to.not.be.undefined;",
+							"});",
+							"",
+							"if (foundRepo) {",
+							"    pm.variables.set(\"repository\", targetRepoName);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "84b81f46-6c1c-4ecb-9bf7-322d28e281a2"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if token_id exists before making the request",
+							"const tokenId = pm.variables.get(\"token_id\");",
+							"const owner = pm.variables.get(\"owner\");",
+							"",
+							"if (!tokenId || tokenId === \"null\" || tokenId === \"\") {",
+							"    console.log(\"⚠️ ERROR: token_id is not set or is empty.\");",
+							"    console.log(\"⚠️ This request requires a valid OAuth token to proceed.\");",
+							"",
+							"    // Skip this request",
+							"    throw new Error(\"token_id is not set. OAuth flow must be completed first.\");",
+							"}",
+							"",
+							"if (!owner || owner === \"null\" || owner === \"\") {    ",
+							"    // Skip this request",
+							"    throw new Error(\"owner is not set. Please run 'Get user orgs' first.\");",
+							"}",
+							"",
+							"// Validation passed - set the repository variable and skip request execution",
+							"//pm.variables.set(\"repository\", \"sdk-gen-github-integration-testing\");",
+							"//console.log(\"✅ Repository variable set to 'sdk-gen-github-integration-testing'\");",
+							"",
+							"// Skip the actual request execution",
+							"//pm.execution.skipRequest();"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "1b3b57a6-b2aa-424b-bd9c-961d7bcc5b6f"
+					}
+				}
+			],
+			"id": "afd4591b-3be9-4388-afb6-f521199febae",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "200 OK - list repos",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/git/repositories?tokenId={{token_id}}&owner={{owner}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"git",
+						"repositories"
+					],
+					"query": [
+						{
+							"key": "tokenId",
+							"value": "{{token_id}}",
+							"description": "the id of OAuth token"
+						},
+						{
+							"key": "customDomain",
+							"value": "{{custom_domain}}",
+							"description": "the custom domain to be used for on-prem integration",
+							"disabled": true
+						},
+						{
+							"key": "owner",
+							"value": "{{owner}}",
+							"description": "the username/orgname who owns the repository"
+						}
+					]
+				},
+				"description": "With the given owner we can now list out the repos"
+			},
+			"response": [
+				{
+					"id": "26bc8c39-4f7a-465f-b9d7-6ea4ba0c5158",
+					"name": "200 OK - list repos",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories?tokenId=123&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "123"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"repositories\": [\n    {\n      \"name\": \"openapi-to-postman\",\n      \"id\": \"openapi-to-postman\",\n      \"full_name\": \"postmanlabs/openapi-to-postman\",\n      \"owner\": {\n        \"id\": \"postmanlabs\",\n        \"name\": \"Postman\"\n      }\n    },\n    {\n      \"id\": \"test-repository\",\n      \"name\": \"test-repository\",\n      \"full_name\": \"postmanlabs/test-repository\",\n      \"owner\": {\n        \"id\": \"postmanlabs\",\n        \"name\": \"Postman\"\n      }\n    },\n    {\n      \"name\": \"codegen-curl\",\n      \"id\": \"codegen-curl\",\n      \"full_name\": \"postmanlabs/codegen-curl\",\n      \"owner\": {\n        \"id\": \"postmanlabs\",\n        \"name\": \"Postman\"\n      }\n    }\n  ]\n}"
+				},
+				{
+					"id": "990e0f4f-6e66-4420-b9d9-6466aebbc243",
+					"name": "400 token missing",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/git/repositories"
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"paramMissingError\",\n    \"message\": \"Required param missing in the request\",\n    \"details\": {\n      \"param\": \"tokenId\"\n    }\n  }\n}"
+				},
+				{
+					"id": "1d97beb7-2e5f-4ff6-983a-d0f9c209353c",
+					"name": "400 owner missing",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories?tokenId=123",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "123"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"paramMissingError\",\n    \"message\": \"Required param missing in the request\",\n    \"details\": {\n      \"param\": \"owner\"\n    }\n  }\n}"
+				},
+				{
+					"id": "0c3c3ef5-da0d-492b-9915-af6cbf392237",
+					"name": "400 invalid token",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories?tokenId=100&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "100"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"invalidGitTokenError\",\n    \"message\": \"Please check if the access token is valid and has the appropriate permissions\"\n  }\n}"
+				},
+				{
+					"id": "af75e577-46a9-4cfa-a7cf-693851a33db5",
+					"name": "403 forbidden (tokenId not owned by the user)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories?tokenId=1&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "1"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"forbiddenError\",\n    \"message\": \"You are not permitted to perform the action.\",\n    \"details\": {\n      \"model\": \"oauthtoken\",\n      \"model_id\": 4908,\n      \"message\": \"You are not allowed to access this OAuth token\"\n    }\n  }\n}"
+				},
+				{
+					"id": "d247f170-93a9-4f9b-909f-dace400b4571",
+					"name": "404 token not found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories?tokenId=9999&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "9999"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"tokenNotFoundError\",\n    \"message\": \"We could not find the token you are looking for\"\n  }\n}"
+				},
+				{
+					"id": "4351b4b7-5dc9-4855-80e6-07fe20e82c9c",
+					"name": "404 Not found (3rd party)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/orgs?tokenId=13&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"orgs"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "13"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n      \"name\": \"userNotFoundError\",\n      \"message\": \"We could not find the user you are looking for\"\n    }\n}"
+				},
+				{
+					"id": "b9e498f5-ca36-4cf6-ab18-958bbfc36463",
+					"name": "404 Unknown owner",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories?tokenId={{token_id}}&owner={{owner}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "{{token_id}}",
+									"description": "the id of OAuth token"
+								},
+								{
+									"key": "customDomain",
+									"value": "{{custom_domain}}",
+									"description": "the custom domain to be used for on-prem integration",
+									"disabled": true
+								},
+								{
+									"key": "owner",
+									"value": "{{owner}}"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 28 Sep 2021 02:27:48 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=2f63bf9e70649130"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=76a83e0b82cd2beb"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"c6-41crmw1vJ8fIRUHns0cAvQ\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"organisationNotFoundError\",\n    \"message\": \"We could not find the organisation you are looking for. The organisation may have been deleted or renamed.\",\n    \"details\": {\n        \"params\": \"owner\"\n    }\n  }\n}"
+				}
+			]
+		},
+		{
+			"name": "List branches of a repository",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"pm.variables.set(\"branch\", json.branches[0].name);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "9b6136af-73da-4f9f-9c9e-08b3875711d5"
+					}
+				}
+			],
+			"id": "87241484-c238-4f2b-859d-db05d6499f28",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "200 OK - list branches",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/git/repositories/:repository/branches?tokenId={{token_id}}&owner={{owner}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"git",
+						"repositories",
+						":repository",
+						"branches"
+					],
+					"query": [
+						{
+							"key": "tokenId",
+							"value": "{{token_id}}",
+							"description": "the id of OAuth token"
+						},
+						{
+							"key": "owner",
+							"value": "{{owner}}",
+							"description": "the username/orgname who owns the repository"
+						},
+						{
+							"key": "customDomain",
+							"value": "{{custom_domain}}",
+							"description": "the custom domain to be used for on-prem integration",
+							"disabled": true
+						}
+					],
+					"variable": [
+						{
+							"id": "f047f2d6-f1a4-41de-8e04-0daecec5541c",
+							"key": "repository",
+							"value": "{{repository}}"
+						}
+					]
+				},
+				"description": "Now that we have the owner, repository, and tokenid, we can decide which branch we will be making the PRs to."
+			},
+			"response": [
+				{
+					"id": "0d6fb8f4-84f6-431c-9df0-24f3ae8506e8",
+					"name": "200 OK - list branches",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?token_id=123456&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "token_id",
+									"value": "123456"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "openapi-to-postman"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"branches\": [\n    {\n      \"name\": \"master\",\n      \"commit\": \"d23234\",\n      \"link\": \"https://github.com/shubhamjoshi/repository/tree/master\"\n    },\n    {\n      \"name\": \"develop\",\n      \"commit\": \"dd2314\",\n      \"link\": \"https://github.com/shubhamjoshi/repository/tree/develop\"\n    },\n    {\n      \"name\": \"feature/api-backup\",\n      \"commit\": \"c2q121\",\n      \"link\": \"https://github.com/shubhamjoshi/repository/tree/feature/api-backup\"\n    }\n  ]\n}"
+				},
+				{
+					"id": "2d8cc74c-0ef9-4191-b2c9-35e285c2a373",
+					"name": "400 token missing",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "payments"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"paramMissingError\",\n    \"message\": \"Required param missing in the request\",\n    \"details\": {\n      \"param\": \"tokenId\"\n    }\n  }\n}"
+				},
+				{
+					"id": "2639d8f9-78b3-43de-a592-4e7341ed4d16",
+					"name": "400 owner missing",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?tokenId=123",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "123"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "payments"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"paramMissingError\",\n    \"message\": \"Required parameter missing in the request\",\n    \"details\": {\n      \"param\": \"owner\"\n    }\n  }\n}"
+				},
+				{
+					"id": "0287d667-4b5a-4791-8e1d-a491ce3ca202",
+					"name": "400 invalid token",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?tokenId=100&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "100"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "payments"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"invalidGitTokenError\",\n    \"message\": \"Please check if the access token is valid and has the appropriate access\"\n  }\n}"
+				},
+				{
+					"id": "10f3b81e-d6f3-401c-aca8-c9dd93e29715",
+					"name": "403 forbidden (tokenId not owned by the user)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?tokenId=1&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "1"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "payments"
+								}
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n      \"name\": \"forbiddenError\",\n      \"message\": \"You are not permitted to perform the action.\",\n      \"details\": {\n        \"model\": \"oauthtoken\",\n        \"model_id\": 1,\n        \"owner\": 1\n      }\n    }\n}"
+				},
+				{
+					"id": "4b0e3eb3-2688-4fad-b55f-ad37604eaa02",
+					"name": "404 token not found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?tokenId=9999&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "9999"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "payments"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n  \"error\": {\n    \"name\": \"tokenNotFoundError\",\n    \"message\": \"We could not find the token you are looking for\"\n  }\n}"
+				},
+				{
+					"id": "0b693724-430c-4cdc-aa99-39c6fd4b4995",
+					"name": "404 not found (3rd party service)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/git/repositories/:repository/branches?tokenId=123&owner=postmanlabs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"git",
+								"repositories",
+								":repository",
+								"branches"
+							],
+							"query": [
+								{
+									"key": "tokenId",
+									"value": "123"
+								},
+								{
+									"key": "owner",
+									"value": "postmanlabs"
+								}
+							],
+							"variable": [
+								{
+									"key": "repository",
+									"value": "invalid-repo"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"repositoryNotFoundError\",\n        \"message\": \"We could not find the repository you are looking for. The repository may have been deleted or renamed.\",\n        \"details\": {\n            \"params\": \"invalid-repo\"\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Create Integration",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.variables.set(\"integration_id\", json.model_id);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"id": "64a0ad89-59be-439e-b0ff-4fbf86b9c804"
+					}
+				}
+			],
+			"id": "3e4d76e4-fe05-45b8-8c33-0a757685ddcc",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-access-token",
+						"value": "{{accessToken}}",
+						"type": "text"
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "200 - Create Success",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"{{rule}}\",\n    \"entity\": \"collection\",\n    \"executor\": \"{{test_collectionID}}\",\n    \"variables\": {\n        \"access_token\": \"{{github_access_token}}\",\n        \"repository\": \"{{repository}}\",\n        \"branch\": \"{{branch}}\",\n        \"owner\": \"{{owner}}\",\n        \"directory\": \"sdk-directory/\",\n        \"name\": \"example-name.json\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/integration?workspace={{workspaceId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"integration"
+					],
+					"query": [
+						{
+							"key": "workspace",
+							"value": "{{workspaceId}}",
+							"description": "Optional: Workspace ID"
+						}
+					]
+				},
+				"description": "We are using this to create the new SDK to Gitghub integration. The `Variables` field can be used to store any data we might need for our service. If you look at the `Body` in this request it will show you some of the stuff we should store including:\n\n- `repository`: the repo the SDKs will be placed in\n    \n- `branch`: the branch the SDKs will be pushed to\n    \n- `owner`: the owner of this integration who will be credited with the creation of this branch\n    \n- `path`: the path to the directory that will hold the SDKs\n    \n\n**Request Body**\n\n| Field | Description |\n| --- | --- |\n| name | Name of the integration. |\n| rule | Type of integration. Eg: monitor_run_slack |\n| entity | Type of Postman entity. Eg: collection, jobTemplate |\n| executor | ID of the Postman entity that the integration is to be configured on. |\n| variables | List of variables required for integration. The structure of this field is dependent on the type of integration. |"
+			},
+			"response": [
+				{
+					"id": "61d2b485-cd95-4dee-86b7-56c99b617a63",
+					"name": "403 - Insufficient permissions on the entity",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"name": "Content-Type",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"collection_github\",\n    \"entity\": \"collection\",\n    \"executor\": \"U1-b450fc43-9ace-410e-8908-d1472c6d9940\",\n    \"variables\": {\n        \"access_token\": \"123\",\n        \"repository\": \"HelloWorld\",\n        \"directory\": \"directory\",\n        \"owner\": \"AbhiramHPostman\",\n        \"name\": \"collectionBackup.json\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/integration"
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:34:42 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=b589c81bb5a38d99"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=1b399401c77193ad"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"ed-mTvYrqLiP8r1YuDuL96Ikg\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"forbiddenError\",\n        \"message\": \"You are not permitted to perform the action.\",\n        \"details\": {\n            \"model\": \"collection\",\n            \"model_id\": \"U1-b450fc43-9ace-410e-8908-d1472c6d9940\",\n            \"owner\": \"508301\"\n        }\n    }\n}"
+				},
+				{
+					"id": "fc7573d7-bed2-46fc-902c-f60dca64b0e0",
+					"name": "404 - Entity not found",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"collection_github\",\n    \"entity\": \"collection\",\n    \"executor\": \"U1-12345678-1234-1234-1234-123456789012\",\n    \"variables\": {\n        \"access_token\": \"123\",\n        \"repository\": \"test\",\n        \"directory\": \"directory\",\n        \"owner\": \"postman\",\n        \"name\": \"collectionBackup.json\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/integration?workspace={{workspaceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration"
+							],
+							"query": [
+								{
+									"key": "workspace",
+									"value": "{{workspaceId}}"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"instanceNotFoundError\",\n        \"message\": \"We could not find the collection you are looking for\",\n        \"details\": {\n            \"model\": \"collection\",\n            \"model_id\": \"U1-12345678-1234-1234-1234-123456789012\",\n            \"owner\": \"508301\"\n        }\n    }\n}"
+				},
+				{
+					"id": "4fdbe7a2-b5db-4a88-9aec-1e633b3be284",
+					"name": "400 - Required parameter missing",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"name": "Content-Type",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"collection_github\",\n    \"entity\": \"collection\",\n    \"variables\": {\n        \"access_token\": \"123\",\n        \"repository\": \"HelloWorld\",\n        \"directory\": \"directory\",\n        \"owner\": \"AbhiramHPostman\",\n        \"name\": \"collectionBackup.json\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/integration"
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:36:32 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=f3472d8423a7a8b9"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=f13a046f613320f8"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"b3-H70d0jpru7rCBiTdLlUyHA\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"paramMissingError\",\n        \"message\": \"Parameter is missing in the request.\",\n        \"details\": {\n            \"param\": \"executor\"\n        }\n    }\n}"
+				},
+				{
+					"id": "8d4e1013-a6d6-4a13-979f-6538e09d2562",
+					"name": "400 - Missing mandatory variables",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"name": "Content-Type",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"collection_github\",\n    \"entity\": \"collection\",\n    \"executor\": \"U1-b450fc43-9ace-410e-8908-d1472c6d9940\",\n    \"variables\": {\n        \"repository\": \"HelloWorld\",\n        \"directory\": \"directory\",\n        \"owner\": \"AbhiramHPostman\",\n        \"name\": \"collectionBackup.json\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/integration"
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Access-Control-Allow-Credentials",
+							"value": "",
+							"name": "Access-Control-Allow-Credentials",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "",
+							"name": "Access-Control-Allow-Headers",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "",
+							"name": "Access-Control-Allow-Methods",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "",
+							"name": "Access-Control-Allow-Origin",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Expose-Headers",
+							"value": "",
+							"name": "Access-Control-Expose-Headers",
+							"description": ""
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive",
+							"name": "Connection",
+							"description": ""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip",
+							"name": "Content-Encoding",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8",
+							"name": "Content-Type",
+							"description": ""
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 15 Sep 2016 10:02:51 GMT",
+							"name": "Date",
+							"description": ""
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"13c-VWQ3sQqpJk+w6dIp+GOevA\"",
+							"name": "ETag",
+							"description": ""
+						},
+						{
+							"key": "Server",
+							"value": "nginx/1.8.1",
+							"name": "Server",
+							"description": ""
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked",
+							"name": "Transfer-Encoding",
+							"description": ""
+						},
+						{
+							"key": "X-Powered-By",
+							"value": "Sails <sailsjs.org>",
+							"name": "X-Powered-By",
+							"description": ""
+						},
+						{
+							"key": "set-cookie",
+							"value": "sails.sid=s%3ABLL4pdGviFFKlBtMEU6RCLaYvX8ck6ay.nLssVON88D2O6Fi9ZqY8sgsW%2FJHFxf5SbYS2o8lP0Qk; Path=/; Expires=Thu, 15 Sep 2016 10:12:51 GMT; HttpOnly",
+							"name": "set-cookie",
+							"description": ""
+						}
+					],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"httpOnly": true,
+							"domain": "sync-beta.getpostman.com",
+							"path": "/",
+							"secure": false,
+							"value": "s%3ABLL4pdGviFFKlBtMEU6RCLaYvX8ck6ay.nLssVON88D2O6Fi9ZqY8sgsW%2FJHFxf5SbYS2o8lP0Qk",
+							"key": "sails.sid"
+						}
+					],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"mandatoryVariablesMissingError\",\n        \"message\": \"A mandatory variable is missing for this rule\",\n        \"details\": {\n            \"mandatory_variables\": [\"access_token\", \"repository\", \"owner\"],\n            \"missing_variables\": [\"access_token\"]\n        }\n    }\n}"
+				},
+				{
+					"id": "84d4bc3e-6a75-411a-8f64-1438788fc8c7",
+					"name": "403 - Incorrect/Expired Token",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "invalid",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"name": "Content-Type",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"collection_github\",\n    \"entity\": \"collection\",\n    \"executor\": \"U1-b450fc43-9ace-410e-8908-d1472c6d9940\",\n    \"variables\": {\n        \"access_token\": \"123\",\n        \"repository\": \"HelloWorld\",\n        \"directory\": \"directory\",\n        \"owner\": \"AbhiramHPostman\",\n        \"name\": \"collectionBackup.json\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/integration"
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:53:08 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=67132e77ba4776ca"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=52a45f55929e062b"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"5d-IeocWkChUU2c66iZCZlhLw\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"authenticationError\",\n        \"message\": \"You are not authenticated by the server.\"\n    }\n}"
+				},
+				{
+					"id": "27f065c8-9f57-4f81-98eb-f6e5fdff97a6",
+					"name": "200 - Create Success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My collection backup integration\",\n    \"rule\": \"collection_github\",\n    \"entity\": \"collection\",\n    \"executor\": \"postman-collection-id\",\n    \"variables\": {\n        \"access_token\": \"123\",\n        \"repository\": \"openapi-to-postman\",\n        \"branch\": \"master\",\n        \"language\" : \"PYTHON\",\n        \"owner\": \"shreys7\",\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/integration"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:56:32 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=ff34037dabb97842"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=e4cb0cfea3ab3776"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"1e4-3L8iXK84RIImwdTRDE2emg\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"model_id\": 3020,\n    \"meta\": {\n        \"model\": \"integration\",\n        \"action\": \"create\"\n    },\n    \"data\": {\n        \"name\": \"My collection backup integration\",\n        \"rule\": \"collection_github\",\n        \"executor\": \"{{collectionID}}\",\n        \"isPaused\": false,\n        \"entity\": \"collection\",\n        \"createdBy\": \"{{owner}}\",\n        \"lastUpdatedBy\": \"{{owner}}\",\n        \"variables\": {\n            \"access_token\": \"{{token_id}}\",\n            \"repository\": \"{{repository}}\",\n            \"owner\": \"{{owner}}\",\n            \"name\": \"collectionBackup.json\"\n        },\n        \"createdAt\": \"2020-06-22T08:54:39.707Z\",\n        \"updatedAt\": \"2020-06-22T08:54:39.707Z\",\n        \"team\": \"1\",\n        \"id\": 123\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Integration by ID",
+			"id": "8d70415e-e27e-478f-929d-357723479aaa",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-access-token",
+						"value": "{{accessToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/integration/:integrationId?populateStatus=1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"integration",
+						":integrationId"
+					],
+					"query": [
+						{
+							"key": "populateStatus",
+							"value": "1",
+							"description": "Can be set to 0 or 1; toggles returning status in the API."
+						}
+					],
+					"variable": [
+						{
+							"id": "7ac64415-a1fb-46c9-bd77-742ac6677e48",
+							"key": "integrationId",
+							"value": "{{integrationId}}",
+							"description": "Integration ID"
+						}
+					]
+				},
+				"description": "Get details of a given integration.\n\nThe `populateStatus` parameter is used if we want the `status` field in the response to be populated. If it is `false`, then `status` is set to `null`.\n\n> **Note**: If the user has permission to view sensitive variables, they are added in this API's response as well. Learn more about the permissions [here](https://postmanlabs.atlassian.net/l/cp/TjMntbrn)."
+			},
+			"response": [
+				{
+					"id": "dd51b457-9d51-42da-8d8c-ceed00e4b282",
+					"name": "400 - Token is invalid and user_id missing[Consider removing user_id altogether as endpoint is functional without it]",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "invalid",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/integration/1234"
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:38:54 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "117"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=36ac3ae3cc0afdf6"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=7c69745265a027d2"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"75-Cizc1ffCIn/F0sLOTDA7Gg\""
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"paramMissingError\",\n        \"message\": \"Parameter is missing in the request.\",\n        \"details\": {\n            \"param\": \"user_id\"\n        }\n    }\n}"
+				},
+				{
+					"id": "93ba733e-289c-4289-828d-97f15f53aa71",
+					"name": "404 - Attempt to fetch an integration that does not exist",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/integration/999999"
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:36:32 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=f3472d8423a7a8b9"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=f13a046f613320f8"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"b3-H70d0jpru7rCBiTdLlUyHA\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"instanceNotFoundError\",\n        \"message\": \"We could not find the integration you are looking for\",\n        \"details\": {\n            \"model\": \"integration\",\n            \"model_id\": \"999999\",\n            \"owner\": \"508348\"\n        }\n    }\n}"
+				},
+				{
+					"id": "690ff3e9-5ea2-4f28-b9f4-667fe2c3e139",
+					"name": "403 - Request to fetch an integration not owned by you",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/integration/2631"
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:34:42 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=b589c81bb5a38d99"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=1b399401c77193ad"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"ed-mTvYrqLiP8r1YuDuL96Ikg\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"forbiddenError\",\n        \"message\": \"You are not permitted to perform the action.\",\n        \"details\": {\n            \"model\": \"integration\",\n            \"model_id\": \"2631\",\n            \"owner\": \"508348\",\n            \"message\": \"You do not have appropriate permissions to perform this action.\"\n        }\n    }\n}"
+				},
+				{
+					"id": "1071f9b7-4e17-4fa1-a4a6-805574eac6d8",
+					"name": "403 - Incorrect/Expired Token",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "invalid",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/integration/1234"
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:53:08 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=67132e77ba4776ca"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=52a45f55929e062b"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"5d-IeocWkChUU2c66iZCZlhLw\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"error\": {\n        \"name\": \"authenticationError\",\n        \"message\": \"You are not authenticated by the server.\"\n    }\n}"
+				},
+				{
+					"id": "3144e7e9-17b9-4ad6-aab3-de7a20ae02f8",
+					"name": "200 - Success without status",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/integration/2635"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Access-Control-Allow-Credentials",
+							"value": "",
+							"name": "Access-Control-Allow-Credentials",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "",
+							"name": "Access-Control-Allow-Headers",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "",
+							"name": "Access-Control-Allow-Methods",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "",
+							"name": "Access-Control-Allow-Origin",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Expose-Headers",
+							"value": "",
+							"name": "Access-Control-Expose-Headers",
+							"description": ""
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive",
+							"name": "Connection",
+							"description": ""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip",
+							"name": "Content-Encoding",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8",
+							"name": "Content-Type",
+							"description": ""
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 15 Sep 2016 10:02:51 GMT",
+							"name": "Date",
+							"description": ""
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"13c-VWQ3sQqpJk+w6dIp+GOevA\"",
+							"name": "ETag",
+							"description": ""
+						},
+						{
+							"key": "Server",
+							"value": "nginx/1.8.1",
+							"name": "Server",
+							"description": ""
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked",
+							"name": "Transfer-Encoding",
+							"description": ""
+						},
+						{
+							"key": "X-Powered-By",
+							"value": "Sails <sailsjs.org>",
+							"name": "X-Powered-By",
+							"description": ""
+						},
+						{
+							"key": "set-cookie",
+							"value": "sails.sid=s%3ABLL4pdGviFFKlBtMEU6RCLaYvX8ck6ay.nLssVON88D2O6Fi9ZqY8sgsW%2FJHFxf5SbYS2o8lP0Qk; Path=/; Expires=Thu, 15 Sep 2016 10:12:51 GMT; HttpOnly",
+							"name": "set-cookie",
+							"description": ""
+						}
+					],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"httpOnly": true,
+							"domain": "sync-beta.getpostman.com",
+							"path": "/",
+							"secure": false,
+							"value": "s%3ABLL4pdGviFFKlBtMEU6RCLaYvX8ck6ay.nLssVON88D2O6Fi9ZqY8sgsW%2FJHFxf5SbYS2o8lP0Qk",
+							"key": "sails.sid"
+						}
+					],
+					"responseTime": null,
+					"body": "{\n    \"model_id\": \"2635\",\n    \"meta\": {\n        \"model\": \"integration\",\n        \"action\": \"find\"\n    },\n    \"data\": {\n        \"createdBy\": \"508348\",\n        \"lastUpdatedBy\": \"508348\",\n        \"id\": 2635,\n        \"team\": \"1\",\n        \"rule\": \"monitor_run_slack\",\n        \"entity\": \"jobTemplate\",\n        \"executor\": \"1ea8fb3f-f80a-43c0-bafd-ab89658e5ede\",\n        \"isPaused\": false,\n        \"variables\": {\n            \"channel\": \"atishay-test-channel\",\n            \"options\": \"all_runs\"\n        },\n        \"createdAt\": \"2020-05-25T22:30:03.000Z\",\n        \"updatedAt\": \"2020-05-25T22:30:03.000Z\",\n        \"status\": null,\n        \"name\": \"My monitor run integration\"\n    }\n}"
+				},
+				{
+					"id": "51805746-2141-4204-89cb-92d0ead6ffcd",
+					"name": "200 - Success with status populated",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/integration/2635?populateStatus=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"2635"
+							],
+							"query": [
+								{
+									"key": "populateStatus",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "Text",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Tue, 26 May 2020 06:56:32 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Server",
+							"value": "nginx"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=63072000; includeSubDomains"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=ff34037dabb97842"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=e4cb0cfea3ab3776"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"1e4-3L8iXK84RIImwdTRDE2emg\""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						}
+					],
+					"cookie": [],
+					"responseTime": null,
+					"body": "{\n    \"model_id\": \"2635\",\n    \"meta\": {\n        \"model\": \"integration\",\n        \"action\": \"find\",\n        \"allowedActions\": {\n            \"delete\": true,\n            \"update\": true\n        }\n    },\n    \"data\": {\n        \"createdBy\": \"508348\",\n        \"lastUpdatedBy\": \"508348\",\n        \"id\": 2635,\n        \"team\": \"1\",\n        \"rule\": \"monitor_run_slack\",\n        \"entity\": \"jobTemplate\",\n        \"executor\": \"1ea8fb3f-f80a-43c0-bafd-ab89658e5ede\",\n        \"isPaused\": false,\n        \"variables\": {\n            \"channel\": \"atishay-test-channel\",\n            \"options\": \"all_runs\"\n        },\n        \"createdAt\": \"2020-05-25T22:30:03.000Z\",\n        \"updatedAt\": \"2020-05-25T22:30:03.000Z\",\n        \"status\": \"created\",\n        \"name\": \"My monitor run integration\"\n    }\n}"
+				},
+				{
+					"id": "bf82b177-0eed-46c7-9b83-34e3383ce438",
+					"name": "200 - Success with sensitive information (Shown to creator of integration)",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": "{{baseUrl}}/integration/{{integrationId}}"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Access-Control-Allow-Credentials",
+							"value": "",
+							"name": "Access-Control-Allow-Credentials",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "",
+							"name": "Access-Control-Allow-Headers",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "",
+							"name": "Access-Control-Allow-Methods",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "",
+							"name": "Access-Control-Allow-Origin",
+							"description": ""
+						},
+						{
+							"key": "Access-Control-Expose-Headers",
+							"value": "",
+							"name": "Access-Control-Expose-Headers",
+							"description": ""
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive",
+							"name": "Connection",
+							"description": ""
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip",
+							"name": "Content-Encoding",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8",
+							"name": "Content-Type",
+							"description": ""
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 15 Sep 2016 10:02:51 GMT",
+							"name": "Date",
+							"description": ""
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"13c-VWQ3sQqpJk+w6dIp+GOevA\"",
+							"name": "ETag",
+							"description": ""
+						},
+						{
+							"key": "Server",
+							"value": "nginx/1.8.1",
+							"name": "Server",
+							"description": ""
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked",
+							"name": "Transfer-Encoding",
+							"description": ""
+						},
+						{
+							"key": "X-Powered-By",
+							"value": "Sails <sailsjs.org>",
+							"name": "X-Powered-By",
+							"description": ""
+						},
+						{
+							"key": "set-cookie",
+							"value": "sails.sid=s%3ABLL4pdGviFFKlBtMEU6RCLaYvX8ck6ay.nLssVON88D2O6Fi9ZqY8sgsW%2FJHFxf5SbYS2o8lP0Qk; Path=/; Expires=Thu, 15 Sep 2016 10:12:51 GMT; HttpOnly",
+							"name": "set-cookie",
+							"description": ""
+						}
+					],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"httpOnly": true,
+							"domain": "sync-beta.getpostman.com",
+							"path": "/",
+							"secure": false,
+							"value": "s%3ABLL4pdGviFFKlBtMEU6RCLaYvX8ck6ay.nLssVON88D2O6Fi9ZqY8sgsW%2FJHFxf5SbYS2o8lP0Qk",
+							"key": "sails.sid"
+						}
+					],
+					"responseTime": null,
+					"body": "{\n   \"model_id\":\"18369\",\n   \"meta\":{\n      \"model\":\"integration\",\n      \"action\":\"find\"\n   },\n   \"data\":{\n      \"createdBy\":\"575358\",\n      \"lastUpdatedBy\":\"575358\",\n      \"id\":18369,\n      \"rule\":\"collection_github\",\n      \"entity\":\"collection\",\n      \"executor\":\"9c89f56f-ba75-4d90-a516-1bcb2981365a\",\n      \"isPaused\": false,\n      \"team\":\"1\",\n      \"name\":\"Backup to test/directory/A Collection\",\n      \"variables\":{\n         \"access_token\":\"de29119cc2c2398aba412c0ab53d4d2b3daaa2b6\",\n         \"repository\":\"test\",\n         \"directory\":\"directory\",\n         \"owner\":\"postman\",\n         \"name\":\"A Collection\"\n      },\n      \"createdAt\":\"2021-02-02T07:44:19.000Z\",\n      \"updatedAt\":\"2021-02-02T07:44:19.000Z\",\n      \"status\":null\n   }\n}"
+				}
+			]
+		},
+		{
+			"name": "New Request",
+			"id": "8b08a873-90a6-4c10-a1b4-db883225f23c",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": ""
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": {
+			"key": "x-access-token",
+			"value": "{{access_token}}"
+		}
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				],
+				"id": "7b2328d4-0ea6-4b64-abaa-ea1aa6c471fb"
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				],
+				"id": "bd3c2ec4-ee0b-4cc4-bdb7-97f07dcf4876"
+			}
+		}
+	]
+}
